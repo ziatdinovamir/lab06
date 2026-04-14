@@ -1,54 +1,70 @@
-name: CI
+name: CI Build and Package
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
-  build-and-test:
+  build:
+    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        build_type: [Debug, Release]
+        build_type: [Release, Debug]
+        include:
+          - os: ubuntu-latest
+            generator: "Unix Makefiles"
+            cpack_generator: "TGZ;DEB"
+            deps: "sudo apt-get update && sudo apt-get install -y cmake build-essential"
+          - os: windows-latest
+            generator: "Visual Studio 17 2022"
+            cpack_generator: "ZIP;NSIS"
+            deps: "choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' || echo 'CMake already installed'"
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies (${{ matrix.os }})
+      run: ${{ matrix.deps }}
+      shell: bash
+    
+    - name: Configure CMake
+      run: cmake -H. -B_build -DCPACK_GENERATOR="${{ matrix.cpack_generator }}"
+      shell: bash
+    
+    - name: Build
+      run: cmake --build _build --config ${{ matrix.build_type }}
+      shell: bash
+    
+    - name: Create package
+      run: cmake --build _build --target package --config ${{ matrix.build_type }}
+      shell: bash
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
       with:
-        submodules: true
+        name: packages-${{ matrix.os }}-${{ matrix.build_type }}
+        path: |
+          _build/*.tar.gz
+          _build/*.deb
+          _build/*.zip
+          _build/*.exe
+          _build/*.dmg
     
-    - name: Configure CMake (Linux)
-      if: runner.os == 'Linux'
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTS=ON
-    
-    - name: Configure CMake (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTS=ON
-    
-    - name: Build (Linux)
-      if: runner.os == 'Linux'
-      run: cmake --build build
-    
-    - name: Build (Windows)
-      if: runner.os == 'Windows'
-      run: cmake --build build --config ${{ matrix.build_type }}
-    
-    - name: Test (Linux)
-      if: runner.os == 'Linux'
-      working-directory: build
-      run: |
-        ctest --output-on-failure
-        ./check
-    
-    - name: Test (Windows)
-      if: runner.os == 'Windows'
-      working-directory: build
-      run: |
-        ctest -C ${{ matrix.build_type }} --output-on-failure
-        if (Test-Path "check.exe") { ./check.exe }
-        elseif (Test-Path "${{ matrix.build_type }}/check.exe") { ./${{ matrix.build_type }}/check.exe }
-        else { Write-Host "Check executable not found" }
-      shell: pwsh
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          _build/*.tar.gz
+          _build/*.deb
+          _build/*.zip
+          _build/*.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

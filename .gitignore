@@ -2,3 +2,9 @@
 *install*/
 *.swp
 .idea/
+artifacts/
+_build/
+*.tar.gz
+*.deb
+*.rpm
+*.zip
