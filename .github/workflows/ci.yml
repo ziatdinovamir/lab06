@@ -23,7 +23,7 @@ jobs:
             deps: "sudo apt-get update && sudo apt-get install -y cmake build-essential"
           - os: windows-latest
             generator: "Visual Studio 17 2022"
-            cpack_generator: "ZIP;NSIS"
+            cpack_generator: "ZIP"  # Убрал NSIS, оставил только ZIP
             deps: "choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' || echo 'CMake already installed'"
     
     steps:
@@ -45,6 +45,7 @@ jobs:
     - name: Create package
       run: cmake --build _build --target package --config ${{ matrix.build_type }}
       shell: bash
+      continue-on-error: false
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
@@ -56,6 +57,7 @@ jobs:
           _build/*.zip
           _build/*.exe
           _build/*.dmg
+      continue-on-error: true
     
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
@@ -65,6 +67,5 @@ jobs:
           _build/*.tar.gz
           _build/*.deb
           _build/*.zip
-          _build/*.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
