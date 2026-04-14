@@ -18,10 +18,10 @@ $ source scripts/activate
 ```
 Клонируем предыдущую работу и меняем remote на новый репозиторий 
 ```sh
-$ git clone https://github.com/${GITHUB_USERNAME}/lab04 projects/lab05
-$ cd projects/lab05
+$ git clone https://github.com/${GITHUB_USERNAME}/lab04 projects/lab06
+$ cd projects/lab06
 $ git remote remove origin
-$ git remote add origin https://github.com/${GITHUB_USERNAME}/lab05
+$ git remote add origin https://github.com/${GITHUB_USERNAME}/lab06
 ```
 Добавляем GoogleTest как git submodule для использования в тестах
 ```sh
@@ -29,7 +29,7 @@ $ mkdir third-party
 $ git submodule add https://github.com/google/googletest third-party/gtest
 ```
 ```sh
-Cloning into '/home/amir/ziatdinovamir/workspace/projects/lab05/third-party/gtest'...
+Cloning into '/home/amir/ziatdinovamir/workspace/projects/lab06/third-party/gtest'...
 remote: Enumerating objects: 28616, done.
 remote: Counting objects: 100% (54/54), done.
 remote: Compressing objects: 100% (38/38), done.
@@ -135,7 +135,7 @@ $ _build/check
 $ cmake --build _build --target test -- ARGS=--verbose
 ```
 ```sh
-Running main() from /home/amir/ziatdinovamir/workspace/projects/lab05/third-party/gtest/googletest/src/gtest_main.cc
+Running main() from /home/amir/ziatdinovamir/workspace/projects/lab06/third-party/gtest/googletest/src/gtest_main.cc
 [==========] Running 1 test from 1 test suite.
 [----------] Global test environment set-up.
 [----------] 1 test from Print
@@ -152,9 +152,9 @@ cmake --build _build --target test -- ARGS=--verbose
 ```
 ```
 Running tests...
-UpdateCTestConfiguration  from :/home/amir/ziatdinovamir/workspace/projects/lab05/_build/DartConfiguration.tcl
-UpdateCTestConfiguration  from :/home/amir/ziatdinovamir/workspace/projects/lab05/_build/DartConfiguration.tcl
-Test project /home/amir/ziatdinovamir/workspace/projects/lab05/_build
+UpdateCTestConfiguration  from :/home/amir/ziatdinovamir/workspace/projects/lab06/_build/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/home/amir/ziatdinovamir/workspace/projects/lab06/_build/DartConfiguration.tcl
+Test project /home/amir/ziatdinovamir/workspace/projects/lab06/_build
 Constructing a list of tests
 Done constructing a list of tests
 Updating test list for fixtures
@@ -164,10 +164,10 @@ Checking test dependency graph end
 test 1
     Start 1: check
 
-1: Test command: /home/amir/ziatdinovamir/workspace/projects/lab05/_build/check
-1: Working Directory: /home/amir/ziatdinovamir/workspace/projects/lab05/_build
+1: Test command: /home/amir/ziatdinovamir/workspace/projects/lab06/_build/check
+1: Working Directory: /home/amir/ziatdinovamir/workspace/projects/lab06/_build
 1: Test timeout computed to be: 10000000
-1: Running main() from /home/amir/ziatdinovamir/workspace/projects/lab05/third-party/gtest/googletest/src/gtest_main.cc
+1: Running main() from /home/amir/ziatdinovamir/workspace/projects/lab06/third-party/gtest/googletest/src/gtest_main.cc
 1: [==========] Running 1 test from 1 test suite.
 1: [----------] Global test environment set-up.
 1: [----------] 1 test from Print
@@ -324,7 +324,7 @@ git push origin main
 $ mkdir artifacts
 $ sleep 20s && gnome-screenshot --file artifacts/screenshot.png
 # for macOS: $ screencapture -T 20 artifacts/screenshot.png
-# open https://github.com/${GITHUB_USERNAME}/lab05
+# open https://github.com/${GITHUB_USERNAME}/lab06
 ```
 ![i8B2nKKNmaqDLG2ud5PTEAtrU8xYle-UAt9fyJq5bFRl0I2jzBTpoqN4WEVUcSZLkJ39TM1dAoL79bGhv1vwB-CU](https://github.com/user-attachments/assets/0c39860a-f4ef-439d-834a-df1b9c2c84de)
 
