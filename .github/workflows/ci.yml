@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.os }}
+    name: ${{ matrix.os }} - ${{ matrix.build_type }}
     runs-on: ${{ matrix.os }}
     
     strategy:
@@ -18,45 +18,60 @@ jobs:
         build_type: [Release, Debug]
         include:
           - os: ubuntu-latest
-            generator: "Unix Makefiles"
+            build_type: Release
             cpack_generator: "TGZ;DEB"
-            deps: "sudo apt-get update && sudo apt-get install -y cmake build-essential"
+          - os: ubuntu-latest
+            build_type: Debug
+            cpack_generator: "TGZ"
           - os: windows-latest
-            generator: "Visual Studio 17 2022"
-            cpack_generator: "ZIP"  # Убрал NSIS, оставил только ZIP
-            deps: "choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' || echo 'CMake already installed'"
+            build_type: Release
+            cpack_generator: "ZIP"
+          - os: windows-latest
+            build_type: Debug
+            cpack_generator: "ZIP"
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
-    - name: Install dependencies (${{ matrix.os }})
-      run: ${{ matrix.deps }}
+    - name: Setup Ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential rpm
       shell: bash
     
+    - name: Setup Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' || echo "CMake already installed"
+      shell: powershell
+    
     - name: Configure CMake
-      run: cmake -H. -B_build -DCPACK_GENERATOR="${{ matrix.cpack_generator }}"
+      run: cmake -H. -B_build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
       shell: bash
     
     - name: Build
       run: cmake --build _build --config ${{ matrix.build_type }}
       shell: bash
     
-    - name: Create package
-      run: cmake --build _build --target package --config ${{ matrix.build_type }}
+    - name: Create packages
+      run: |
+        cd _build
+        cpack -G "${{ matrix.cpack_generator }}"
       shell: bash
-      continue-on-error: false
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: packages-${{ matrix.os }}-${{ matrix.build_type }}
+        name: ${{ matrix.os }}-${{ matrix.build_type }}
         path: |
           _build/*.tar.gz
           _build/*.deb
+          _build/*.rpm
           _build/*.zip
-          _build/*.exe
-          _build/*.dmg
       continue-on-error: true
     
     - name: Create Release
@@ -66,6 +81,8 @@ jobs:
         files: |
           _build/*.tar.gz
           _build/*.deb
+          _build/*.rpm
           _build/*.zip
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,8 @@
+Solver application for mathematical equations.
+
+Package includes:
+- solver executable
+- formatter library
+- examples and tests
+
+Platforms: Ubuntu Linux, Windows
