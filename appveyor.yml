@@ -1,0 +1,21 @@
+version: 1.0.{build}
+image: Visual Studio 2019
+
+platform:
+  - x64
+  - Win32
+
+configuration:
+  - Debug
+  - Release
+
+matrix:
+  fast_finish: true
+
+build_script:
+  - cmake -B build -DCMAKE_BUILD_TYPE=%CONFIGURATION%
+  - cmake --build build --config %CONFIGURATION%
+
+test_script:
+  - .\build\hello_world\%CONFIGURATION%\hello_world.exe
+  - echo 1 -3 2 | .\build\solver\%CONFIGURATION%\solver.exe
