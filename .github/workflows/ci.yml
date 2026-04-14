@@ -46,8 +46,9 @@ jobs:
     - name: Setup Windows
       if: matrix.os == 'windows-latest'
       run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' || echo "CMake already installed"
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
       shell: powershell
+      continue-on-error: true
     
     - name: Configure CMake
       run: cmake -H. -B_build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
