@@ -17,27 +17,27 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         build_type: [Release, Debug]
         include:
-          
+          # Linux (Ubuntu) - Release
           - os: ubuntu-latest
             build_type: Release
             cpack_generator: "TGZ;DEB;RPM"
-            
+          # Linux (Ubuntu) - Debug
           - os: ubuntu-latest
             build_type: Debug
             cpack_generator: "TGZ"
-            
+          # macOS - Release
           - os: macos-latest
             build_type: Release
             cpack_generator: "DragNDrop;TGZ"
-
+          # macOS - Debug
           - os: macos-latest
             build_type: Debug
             cpack_generator: "TGZ"
-
+          # Windows - Release
           - os: windows-latest
             build_type: Release
             cpack_generator: "WIX;ZIP"
-
+          # Windows - Debug
           - os: windows-latest
             build_type: Debug
             cpack_generator: "ZIP"
@@ -64,9 +64,9 @@ jobs:
     - name: Setup Windows
       if: matrix.os == 'windows-latest'
       run: |
-        choco install cmake wixtoolset --installargs 'ADD_CMAKE_TO_PATH=System'
+        choco install cmake wixtoolset --version=3.11.2 --installargs 'ADD_CMAKE_TO_PATH=System' -y
+        echo "C:\Program Files (x86)\WiX Toolset v3.11\bin" >> $env:GITHUB_PATH
       shell: powershell
-      continue-on-error: true
     
     - name: Configure CMake
       run: cmake -H. -B_build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
