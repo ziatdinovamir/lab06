@@ -20,3 +20,11 @@ _test_package/
 
 .DS_Store
 Thumbs.db
+
+*.deb
+*.rpm
+*.dmg
+*.msi
+*.exe
+*.zip
+*.tar.gz
