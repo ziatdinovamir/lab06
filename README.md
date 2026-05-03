@@ -1,344 +1,478 @@
-## Laboratory work V
+## Laboratory work VI
 
-Данная лабораторная работа посвещена изучению фреймворков для тестирования на примере **GTest**
+Данная лабораторная работа посвещена изучению средств пакетирования на примере **CPack**
 
 ```sh
-$ open https://github.com/google/googletest
+$ open https://cmake.org/Wiki/CMake:CPackPackageGenerators
 ```
 
 ## Tutorial
 
-Настройка окружения 
+Настраиваем окружение 
 ```sh
 $ export GITHUB_USERNAME=<имя_пользователя>
+$ export GITHUB_EMAIL=<адрес_почтового_ящика>
+$ alias edit=<nano|vi|vim|subl>
 $ alias gsed=sed # for *-nix system
+```
+
+```sh
 $ cd ${GITHUB_USERNAME}/workspace
 $ pushd .
 $ source scripts/activate
 ```
-Клонируем предыдущую работу и меняем remote на новый репозиторий 
+Клонируем репозиторий лабораторной работы №5
 ```sh
-$ git clone https://github.com/${GITHUB_USERNAME}/lab04 projects/lab06
+$ git clone https://github.com/${GITHUB_USERNAME}/lab05 projects/lab06
 $ cd projects/lab06
 $ git remote remove origin
 $ git remote add origin https://github.com/${GITHUB_USERNAME}/lab06
 ```
-Добавляем GoogleTest как git submodule для использования в тестах
+Добавление версионирования в `CMakeLists.txt`
 ```sh
-$ mkdir third-party
-$ git submodule add https://github.com/google/googletest third-party/gtest
-```
-```sh
-Cloning into '/home/amir/ziatdinovamir/workspace/projects/lab06/third-party/gtest'...
-remote: Enumerating objects: 28616, done.
-remote: Counting objects: 100% (54/54), done.
-remote: Compressing objects: 100% (38/38), done.
-remote: Total 28616 (delta 28), reused 16 (delta 16), pack-reused 28562 (from 2)
-Receiving objects: 100% (28616/28616), 13.71 MiB | 4.87 MiB/s, done.
-Resolving deltas: 100% (21259/21259), done.
-```
-```sh
-$ cd third-party/gtest && git checkout release-1.8.1 && cd ../..
-```
-```sh
-You are in 'detached HEAD' state. You can look around, make experimental
-changes and commit them, and you can discard any commits you make in this
-state without impacting any branches by switching back to a branch.
-
-If you want to create a new branch to retain commits you create, you may
-do so (now or later) by using -c with the switch command. Example:
-
-  git switch -c <new-branch-name>
-
-Or undo this operation with:
-
-  git switch -
-
-Turn off this advice by setting config variable advice.detachedHead to false
-
-HEAD is now at 2fe3bd99 Merge pull request #1433 from dsacre/fix-clang-warnings
-```
-```sh
-$ git add third-party/gtest
-$ git commit -m"added gtest framework"
-```
-Редактируем CMakeLists.txt, добавляем опцию BUILD_TESTS и конфигурацию для сборки тестов
-```sh
-$ gsed -i '/option(BUILD_EXAMPLES "Build examples" OFF)/a\
-option(BUILD_TESTS "Build tests" OFF)
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_STRING "v\${PRINT_VERSION}")
 ' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION\
+  \${PRINT_VERSION_MAJOR}.\${PRINT_VERSION_MINOR}.\${PRINT_VERSION_PATCH}.\${PRINT_VERSION_TWEAK})
+' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_TWEAK 0)
+' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_PATCH 0)
+' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_MINOR 1)
+' CMakeLists.txt
+$ gsed -i '/project(print)/a\
+set(PRINT_VERSION_MAJOR 0)
+' CMakeLists.txt
+```
+```sh
+$ git diff
+```
+```sh
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ec70034..d73a3ae 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,13 @@
+ cmake_minimum_required(VERSION 3.14)
+ project(print)
++set(PRINT_VERSION_MAJOR 0)
++set(PRINT_VERSION_MINOR 1)
++set(PRINT_VERSION_PATCH 0)
++set(PRINT_VERSION_TWEAK 0)
++set(PRINT_VERSION
++  ${PRINT_VERSION_MAJOR}.${PRINT_VERSION_MINOR}.${PRINT_VERSION_PATCH}.${PRINT_VERSION_TWEAK})
++set(PRINT_VERSION_STRING "v${PRINT_VERSION}")
++set(PRINT_VERSION_STRING "v${PRINT_VERSION}")
+ 
+ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+```
+Создание файлов описания
+```sh
+$ touch DESCRIPTION && edit DESCRIPTION
+$ touch ChangeLog.md
+$ export DATE="`LANG=en_US date +'%a %b %d %Y'`"
+$ cat > ChangeLog.md <<EOF
+* ${DATE} ${GITHUB_USERNAME} <${GITHUB_EMAIL}> 0.1.0.0
+- Initial RPM release
+EOF
+```
+Создание `CPackConfig.cmake`
+```sh
+$ cat > CPackConfig.cmake <<EOF
+include(InstallRequiredSystemLibraries)
+EOF
+```
+
+```sh
+$ cat >> CPackConfig.cmake <<EOF
+set(CPACK_PACKAGE_CONTACT ${GITHUB_EMAIL})
+set(CPACK_PACKAGE_VERSION_MAJOR \${PRINT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR \${PRINT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH \${PRINT_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION_TWEAK \${PRINT_VERSION_TWEAK})
+set(CPACK_PACKAGE_VERSION \${PRINT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_FILE \${CMAKE_CURRENT_SOURCE_DIR}/DESCRIPTION)
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "static C++ library for printing")
+EOF
+```
+
+```sh
+$ cat >> CPackConfig.cmake <<EOF
+
+set(CPACK_RESOURCE_FILE_LICENSE \${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+set(CPACK_RESOURCE_FILE_README \${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+EOF
+```
+
+```sh
+$ cat >> CPackConfig.cmake <<EOF
+
+set(CPACK_RPM_PACKAGE_NAME "print-devel")
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+set(CPACK_RPM_PACKAGE_GROUP "print")
+set(CPACK_RPM_CHANGELOG_FILE \${CMAKE_CURRENT_SOURCE_DIR}/ChangeLog.md)
+set(CPACK_RPM_PACKAGE_RELEASE 1)
+EOF
+```
+
+```sh
+$ cat >> CPackConfig.cmake <<EOF
+
+set(CPACK_DEBIAN_PACKAGE_NAME "libprint-dev")
+set(CPACK_DEBIAN_PACKAGE_PREDEPENDS "cmake >= 3.0")
+set(CPACK_DEBIAN_PACKAGE_RELEASE 1)
+EOF
+```
+
+```sh
+$ cat >> CPackConfig.cmake <<EOF
+
+include(CPack)
+EOF
+```
+Подключение `CPack` и обновление README
+```sh
 $ cat >> CMakeLists.txt <<EOF
 
-if(BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(third-party/gtest)
-  file(GLOB \${PROJECT_NAME}_TEST_SOURCES tests/*.cpp)
-  add_executable(check \${\${PROJECT_NAME}_TEST_SOURCES})
-  target_link_libraries(check \${PROJECT_NAME} gtest_main)
-  add_test(NAME check COMMAND check)
-endif()
+include(CPackConfig.cmake)
 EOF
 ```
-Создание теста
+
 ```sh
-$ mkdir tests
-$ cat > tests/test1.cpp <<EOF
-#include <print.hpp>
-
-#include <gtest/gtest.h>
-
-TEST(Print, InFileStream)
-{
-  std::string filepath = "file.txt";
-  std::string text = "hello";
-  std::ofstream out{filepath};
-
-  print(text, out);
-  out.close();
-
-  std::string result;
-  std::ifstream in{filepath};
-  in >> result;
-
-  EXPECT_EQ(result, text);
-}
-EOF
+$ gsed -i 's/lab05/lab06/g' README.md
 ```
-Сборка и запуск теста
+Коммитим и отправляем на GitHub, добавляя теги
 ```sh
-$ cmake -H. -B_build -DBUILD_TESTS=ON
+$ git add .
+$ git commit -m"added cpack config"
+$ git tag v0.1.0.0
+$ git push origin master --tags
+```
+
+```sh
+$ cmake -H. -B_build
+```
+```sh
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/amir/ziatdinovamir/workspace/projects/lab06/_build
+```
+```sh
 $ cmake --build _build
 ```
 ```sh
-[  8%] Building CXX object CMakeFiles/print.dir/src/print.cpp.o
-[ 16%] Linking CXX static library libprint.a
-[ 16%] Built target print
-[ 25%] Building CXX object third-party/gtest/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
-[ 33%] Linking CXX static library ../../../lib/libgtest.a
-[ 33%] Built target gtest
-[ 41%] Building CXX object third-party/gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
-[ 50%] Linking CXX static library ../../../lib/libgtest_main.a
-[ 50%] Built target gtest_main
-[ 58%] Building CXX object CMakeFiles/check.dir/tests/test1.cpp.o
-[ 66%] Linking CXX executable check
-[ 66%] Built target check
-[ 75%] Building CXX object third-party/gtest/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o
-[ 83%] Linking CXX static library ../../../lib/libgmock.a
-[ 83%] Built target gmock
-[ 91%] Building CXX object third-party/gtest/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o
-[100%] Linking CXX static library ../../../lib/libgmock_main.a
-[100%] Built target gmock_main
+[ 50%] Building CXX object CMakeFiles/print.dir/sources/print.cpp.o
+[100%] Linking CXX static library libprint.a
+[100%] Built target print
 ```
 ```sh
-$ cmake --build _build --target test
-$ _build/check
-$ cmake --build _build --target test -- ARGS=--verbose
+$ cd _build
+$ cpack -G "TGZ"
 ```
 ```sh
-Running main() from /home/amir/ziatdinovamir/workspace/projects/lab06/third-party/gtest/googletest/src/gtest_main.cc
-[==========] Running 1 test from 1 test suite.
-[----------] Global test environment set-up.
-[----------] 1 test from Print
-[ RUN      ] Print.InFileStream
-[       OK ] Print.InFileStream (0 ms)
-[----------] 1 test from Print (0 ms total)
-
-[----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (0 ms total)
-[  PASSED  ] 1 test.
+CPack: Create package using TGZ
+CPack: Install projects
+CPack: - Run preinstall target for: print
+CPack: - Install project: print []
+CPack: Create package
+CPack: - package: /home/amir/ziatdinovamir/workspace/projects/lab06/_build/print-0.1.0.0-Linux.tar.gz generated.
 ```
 ```sh
-cmake --build _build --target test -- ARGS=--verbose
-```
-```
-Running tests...
-UpdateCTestConfiguration  from :/home/amir/ziatdinovamir/workspace/projects/lab06/_build/DartConfiguration.tcl
-UpdateCTestConfiguration  from :/home/amir/ziatdinovamir/workspace/projects/lab06/_build/DartConfiguration.tcl
-Test project /home/amir/ziatdinovamir/workspace/projects/lab06/_build
-Constructing a list of tests
-Done constructing a list of tests
-Updating test list for fixtures
-Added 0 tests to meet fixture requirements
-Checking test dependency graph...
-Checking test dependency graph end
-test 1
-    Start 1: check
-
-1: Test command: /home/amir/ziatdinovamir/workspace/projects/lab06/_build/check
-1: Working Directory: /home/amir/ziatdinovamir/workspace/projects/lab06/_build
-1: Test timeout computed to be: 10000000
-1: Running main() from /home/amir/ziatdinovamir/workspace/projects/lab06/third-party/gtest/googletest/src/gtest_main.cc
-1: [==========] Running 1 test from 1 test suite.
-1: [----------] Global test environment set-up.
-1: [----------] 1 test from Print
-1: [ RUN      ] Print.InFileStream
-1: [       OK ] Print.InFileStream (0 ms)
-1: [----------] 1 test from Print (0 ms total)
-1: 
-1: [----------] Global test environment tear-down
-1: [==========] 1 test from 1 test suite ran. (0 ms total)
-1: [  PASSED  ] 1 test.
-1/1 Test #1: check ............................   Passed    0.00 sec
-
-100% tests passed, 0 tests failed out of 1
-
-Total Test time (real) =   0.01 sec
-```
-Настройка GitHub Actions (вместо Travis CI)
-```sh
-mkdir -p .github/workflows
+$ cd ..
 ```
 ```sh
-cat > .github/workflows/ci.yml <<'EOF'
-name: CI
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-
-jobs:
-  build-and-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        build_type: [Debug, Release]
-    
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    
-    - name: Configure CMake (Linux)
-      if: runner.os == 'Linux'
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTS=ON
-    
-    - name: Configure CMake (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTS=ON
-    
-    - name: Build (Linux)
-      if: runner.os == 'Linux'
-      run: cmake --build build
-    
-    - name: Build (Windows)
-      if: runner.os == 'Windows'
-      run: cmake --build build --config ${{ matrix.build_type }}
-    
-    - name: Test (Linux)
-      if: runner.os == 'Linux'
-      working-directory: build
-      run: |
-        ctest --output-on-failure
-        ./check
-    
-    - name: Test (Windows)
-      if: runner.os == 'Windows'
-      working-directory: build
-      run: |
-        ctest -C ${{ matrix.build_type }} --output-on-failure
-        if (Test-Path "check.exe") { ./check.exe }
-        elseif (Test-Path "${{ matrix.build_type }}/check.exe") { ./${{ matrix.build_type }}/check.exe }
-        else { Write-Host "Check executable not found" }
-      shell: pwsh
-EOF
+$ cmake -H. -B_build -DCPACK_GENERATOR="TGZ"
 ```
-Создаем CMakeLists.txt 
+```sh
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/amir/ziatdinovamir/workspace/projects/lab06/_build
+```
+```sh
+$ cmake --build _build --target package
+```
+```sh
+[100%] Built target print
+Run CPack packaging tool...
+CPack: Create package using TGZ
+CPack: Install projects
+CPack: - Run preinstall target for: print
+CPack: - Install project: print []
+CPack: Create package
+CPack: - package: /home/amir/ziatdinovamir/workspace/projects/lab06/_build/print-0.1.0.0-Linux.tar.gz generated.
+```
+```sh
+$ mkdir artifacts
+$ mv _build/*.tar.gz artifacts
+$ tree artifacts
+```
+```sh
+artifacts
+└── print-0.1.0.0-Linux.tar.gz
+```
+## Homework
+
+После того, как вы настроили взаимодействие с системой непрерывной интеграции,</br>
+обеспечив автоматическую сборку и тестирование ваших изменений, стоит задуматься</br>
+о создание пакетов для измениний, которые помечаются тэгами (см. вкладку [releases](https://github.com/tp-labs/lab06/releases)).</br>
+Пакет должен содержать приложение _solver_ из [предыдущего задания](https://github.com/tp-labs/lab03#задание-1)
+Таким образом, каждый новый релиз будет состоять из следующих компонентов:
+- архивы с файлами исходного кода (`.tar.gz`, `.zip`)
+- пакеты с бинарным файлом _solver_ (`.deb`, `.rpm`, `.msi`, `.dmg`)
+
+Создаем `CMakeLists.txt`
 ```sh
 cat > CMakeLists.txt <<'EOF'
 cmake_minimum_required(VERSION 3.14)
 project(print)
 
+set(PRINT_VERSION_MAJOR 0)
+set(PRINT_VERSION_MINOR 1)
+set(PRINT_VERSION_PATCH 0)
+set(PRINT_VERSION_TWEAK 0)
+set(PRINT_VERSION
+  ${PRINT_VERSION_MAJOR}.${PRINT_VERSION_MINOR}.${PRINT_VERSION_PATCH}.${PRINT_VERSION_TWEAK})
+set(PRINT_VERSION_STRING "v${PRINT_VERSION}")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(MSVC)
-    foreach(flag_var 
-        CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE)
-        if(${flag_var} MATCHES "/MT")
-            string(REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
-        endif()
-    endforeach()
-endif()
+add_subdirectory(formatter_lib)
+add_subdirectory(formatter_ex_lib)
+add_subdirectory(hello_world)
+add_subdirectory(solver)
 
-option(BUILD_EXAMPLES "Build examples" OFF)
-option(BUILD_TESTS "Build tests" OFF)
-
-add_library(print STATIC sources/print.cpp)
-
-target_include_directories(print PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-)
-
-if(BUILD_EXAMPLES)
-    add_executable(example examples/example1.cpp)
-    target_link_libraries(example PRIVATE print)
-endif()
-
-if(BUILD_TESTS)
-    enable_testing()
-    
-    include(FetchContent)
-    
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    
-    FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG v1.14.0
-    )
-    
-    FetchContent_MakeAvailable(googletest)
-    
-    add_executable(check tests/test1.cpp)
-    
-    target_link_libraries(check PRIVATE print gtest_main)
-    
-    target_include_directories(check PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-    )
-    
-    if(MSVC)
-        target_link_options(check PRIVATE 
-            /NODEFAULTLIB:libcmt.lib
-            /NODEFAULTLIB:libcmtd.lib
-        )
-    endif()
-    
-    add_test(NAME check COMMAND check)
-endif()
+include(CPackConfig.cmake)
 EOF
 ```
-Коммитим изменения и пушим на GitHub
+Создаем `CPackConfig.cmake`
+```sh
+cat > CPackConfig.cmake <<'EOF'
+include(InstallRequiredSystemLibraries)
+
+set(CPACK_PACKAGE_CONTACT "ziatdinov.amir.07@gmail.com")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Amir Ziatdinov <ziatdinov.amir.07@gmail.com>")
+
+set(CPACK_PACKAGE_VERSION_MAJOR 0)
+set(CPACK_PACKAGE_VERSION_MINOR 1)
+set(CPACK_PACKAGE_VERSION_PATCH 0)
+set(CPACK_PACKAGE_VERSION_TWEAK 0)
+set(CPACK_PACKAGE_VERSION "0.1.0.0")
+
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Solver application - solves mathematical equations")
+set(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_CURRENT_SOURCE_DIR}/DESCRIPTION)
+
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.rtf)
+set(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+
+set(CPACK_PACKAGE_NAME "solver")
+
+set(CPACK_DEBIAN_PACKAGE_NAME "solver")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libstdc++6")
+set(CPACK_DEBIAN_PACKAGE_RELEASE 1)
+
+set(CPACK_RPM_PACKAGE_NAME "solver")
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+set(CPACK_RPM_PACKAGE_RELEASE 1)
+
+set(CPACK_DMG_VOLUME_NAME "Solver ${CPACK_PACKAGE_VERSION}")
+set(CPACK_DMG_FORMAT "UDBZ")
+
+set(CPACK_WIX_LICENSE_RTF ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.rtf)
+set(CPACK_WIX_UPGRADE_GUID "12345678-1234-1234-1234-123456789012")
+set(CPACK_WIX_PRODUCT_NAME "Solver")
+set(CPACK_WIX_MANUFACTURER "Amir Ziatdinov")
+set(CPACK_WIX_PACKAGE_LANGUAGES "en-US")
+
+include(CPack)
+EOF
+```
+Подключаем `CPackConfig.cmake` в `CMakeLists.txt`
+```sh
+echo "" >> CMakeLists.txt
+echo "include(CPackConfig.cmake)" >> CMakeLists.txt
+```
+Cоздаем `workflows/ci.yml`
+```sh
+cat > .github/workflows/ci.yml <<'EOF'
+name: CI Build and Package
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} - ${{ matrix.build_type }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        build_type: [Release, Debug]
+        include:
+          - os: ubuntu-latest
+            build_type: Release
+            cpack_generator: "TGZ;DEB;RPM"
+          - os: ubuntu-latest
+            build_type: Debug
+            cpack_generator: "TGZ"
+          - os: macos-latest
+            build_type: Release
+            cpack_generator: "DragNDrop;TGZ"
+          - os: macos-latest
+            build_type: Debug
+            cpack_generator: "TGZ"
+          - os: windows-latest
+            build_type: Release
+            cpack_generator: "WIX;ZIP"
+          - os: windows-latest
+            build_type: Debug
+            cpack_generator: "ZIP"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential rpm
+      shell: bash
+    
+    - name: Setup macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install cmake
+      shell: bash
+    
+    - name: Setup Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        cmake --version
+        echo "WiX Toolset is pre-installed"
+      shell: powershell
+    
+    - name: Configure CMake
+      run: cmake -H. -B_build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+      shell: bash
+    
+    - name: Build
+      run: cmake --build _build --config ${{ matrix.build_type }}
+      shell: bash
+    
+    - name: Create packages
+      run: |
+        cd _build
+        cpack -G "${{ matrix.cpack_generator }}"
+      shell: bash
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.os }}-${{ matrix.build_type }}
+        path: |
+          _build/*.tar.gz
+          _build/*.deb
+          _build/*.rpm
+          _build/*.dmg
+          _build/*.zip
+          _build/*.msi
+          _build/*.exe
+      continue-on-error: true
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          _build/*.tar.gz
+          _build/*.deb
+          _build/*.rpm
+          _build/*.dmg
+          _build/*.zip
+          _build/*.msi
+          _build/*.exe
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+EOF
+```
+```sh
+cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release
+```
+```sh
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done (0.4s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/amir/ziatdinovamir/workspace/projects/lab06/_build
+```
+```sh
+cmake --build _build
+```
+```sh
+[ 50%] Building CXX object CMakeFiles/print.dir/sources/print.cpp.o
+[100%] Linking CXX static library libprint.a
+[100%] Built target print
+```
+```sh
+cd _build
+cpack -G "TGZ"
+```
+```sh
+CPack: Create package using TGZ
+CPack: Install projects
+CPack: - Run preinstall target for: print
+CPack: - Install project: print []
+CPack: Create package
+CPack: - package: /home/amir/ziatdinovamir/workspace/projects/lab06/_build/solver-0.1.0.0-Linux.tar.gz generated.
+```
+```sh
+cpack -G "DEB"
+```
+```sh
+CPack: Create package using DEB
+CPack: Install projects
+CPack: - Run preinstall target for: print
+CPack: - Install project: print []
+CPack: Create package
+CPack: - package: /home/amir/ziatdinovamir/workspace/projects/lab06/_build/solver-0.1.0.0-Linux.deb generated.
+```
+Добавить все изменения в Git
 ```sh
 git add .
-git commit -m "Attempt 4"
+git commit -m "Fix MSI2"
 git push origin main
 ```
-Делаем скриншот 
-```sh
-$ mkdir artifacts
-$ sleep 20s && gnome-screenshot --file artifacts/screenshot.png
-# for macOS: $ screencapture -T 20 artifacts/screenshot.png
-# open https://github.com/${GITHUB_USERNAME}/lab06
-```
-![i8B2nKKNmaqDLG2ud5PTEAtrU8xYle-UAt9fyJq5bFRl0I2jzBTpoqN4WEVUcSZLkJ39TM1dAoL79bGhv1vwB-CU](https://github.com/user-attachments/assets/0c39860a-f4ef-439d-834a-df1b9c2c84de)
 
-## Report
 
-```sh
-$ popd
-$ export LAB_NUMBER=05
-$ git clone https://github.com/tp-labs/lab${LAB_NUMBER} tasks/lab${LAB_NUMBER}
-$ mkdir reports/lab${LAB_NUMBER}
-$ cp tasks/lab${LAB_NUMBER}/README.md reports/lab${LAB_NUMBER}/REPORT.md
-$ cd reports/lab${LAB_NUMBER}
-$ edit REPORT.md
-$ gist REPORT.md
-```
-# lab06
-# lab06
+
+
+
+
+
+
